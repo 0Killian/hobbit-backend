@@ -88,26 +88,24 @@ func init() {
 
 func main() {
 	r := mux.NewRouter()
-	r.HandleFunc("/api/v1/tasks", corsMiddleware(authMiddleware(handleGetTasks))).Methods("GET")
-	r.HandleFunc("/api/v1/tasks", corsMiddleware(authMiddleware(handleCreateTask))).Methods("POST")
-	r.HandleFunc("/api/v1/tasks/{uuid}", corsMiddleware(authMiddleware(handleGetTask))).Methods("GET")
-	r.HandleFunc("/api/v1/tasks/{uuid}", corsMiddleware(authMiddleware(handleUpdateTask))).Methods("PUT")
-	r.HandleFunc("/api/v1/tasks/{uuid}/complete", corsMiddleware(authMiddleware(handleCompleteTask))).Methods("PUT")
+
+	r.Use(corsMiddleware)
+
+	r.HandleFunc("/api/v1/tasks", authMiddleware(handleGetTasks)).Methods("GET,OPTIONS")
+	r.HandleFunc("/api/v1/tasks", authMiddleware(handleCreateTask)).Methods("POST,OPTIONS")
+	r.HandleFunc("/api/v1/tasks/{uuid}", authMiddleware(handleGetTask)).Methods("GET,OPTIONS")
+	r.HandleFunc("/api/v1/tasks/{uuid}", authMiddleware(handleUpdateTask)).Methods("PUT,OPTIONS")
+	r.HandleFunc("/api/v1/tasks/{uuid}/complete", authMiddleware(handleCompleteTask)).Methods("PUT,OPTIONS")
 
 	log.Printf("Server starting on :8080")
 	log.Fatal(http.ListenAndServe(":8080", r))
 }
 
-func corsMiddleware(next http.Handler) http.HandlerFunc {
+func corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-
-		if r.Method == "OPTIONS" {
-			w.WriteHeader(http.StatusOK)
-			return
-		}
 		next.ServeHTTP(w, r)
 	})
 }
