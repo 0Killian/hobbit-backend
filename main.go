@@ -266,7 +266,7 @@ func handleGetTasks(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.Write([]byte(fmt.Sprintf(`{"tasks": %s, "current_page": %d, max_page": %d}`, jsonData, offset/limit+1, (count-1)/limit+1)))
+	w.Write([]byte(fmt.Sprintf(`{"tasks": %s, "current_page": %d, "max_page": %d}`, jsonData, offset/limit+1, (count-1)/limit+1)))
 }
 
 func handleGetTask(w http.ResponseWriter, r *http.Request) {
