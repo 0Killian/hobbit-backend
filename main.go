@@ -98,6 +98,15 @@ func main() {
 	log.Fatal(http.ListenAndServe(":8080", r))
 }
 
+func corsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		next.ServeHTTP(w, r)
+	})
+}
+
 func authMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		bearer := r.Header.Get("Authorization")
@@ -264,13 +273,13 @@ func handleGetTask(w http.ResponseWriter, r *http.Request) {
 
 	task, err := models.FetchOneTask(tx, uuid)
 	if err == nil {
-		w.Header().Set("Content-Type", "application/json")
-
 		jsonData, err := json.Marshal(task)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+
+		w.Header().Set("Content-Type", "application/json")
 		w.Write(jsonData)
 		return
 	}
@@ -367,6 +376,10 @@ func handleUpdateTask(w http.ResponseWriter, r *http.Request) {
 
 	task, err := models.FetchOneTask(tx, uuid)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -421,6 +434,10 @@ func handleCompleteTask(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Fetching task")
 	task, err := models.FetchOneTask(tx, uuid)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
