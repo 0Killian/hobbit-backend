@@ -1,4 +1,4 @@
-create table user (
+create table "user" (
 	user_id uuid primary key not null default gen_random_uuid(),
 	cloud_iam_sub uuid not null
 );

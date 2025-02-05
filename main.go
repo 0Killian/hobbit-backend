@@ -161,7 +161,6 @@ func authMiddleware(next http.HandlerFunc) http.HandlerFunc {
 }
 
 func handleGetTasks(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
 	query := r.URL.Query()
 
 	tx, err := db.Begin()
@@ -200,13 +199,7 @@ func handleGetTasks(w http.ResponseWriter, r *http.Request) {
 		filter.Categories = strings.Split(categories, ",")
 	}
 
-	if owned := query.Get("owned"); owned != "" {
-		if ownedBool, err := strconv.ParseBool(owned); err == nil {
-			if ownedBool {
-				filter.UserID = &user.UserID
-			}
-		}
-	}
+	filter.UserID = &user.UserID
 
 	if completed := query.Get("completed"); completed != "" {
 		if completedBool, err := strconv.ParseBool(completed); err == nil {
@@ -253,6 +246,8 @@ func handleGetTasks(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	w.Header().Set("Content-Type", "application/json")
 	w.Write([]byte(fmt.Sprintf(`{"tasks": %s, "current_page": %d, max_page": %d}`, jsonData, offset/limit+1, (count-1)/limit+1)))
 }
 
@@ -290,15 +285,6 @@ func handleGetTask(w http.ResponseWriter, r *http.Request) {
 }
 
 type CreateTaskPayload struct {
-	Quantity    int    `json:"quantity"`
-	Unit        string `json:"unit"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Frequency   string `json:"frequency"`
-}
-
-type UpdateTaskPayload struct {
-	TaskID      string `json:"task_id"`
 	Quantity    int    `json:"quantity"`
 	Unit        string `json:"unit"`
 	Name        string `json:"name"`
@@ -354,14 +340,9 @@ func handleCreateTask(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleUpdateTask(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	uuid := vars["uuid"]
 	body := r.Body
-
-	var payload UpdateTaskPayload
-	err := json.NewDecoder(body).Decode(&payload)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
 
 	tx, err := db.Begin()
 	if err != nil {
@@ -370,13 +351,21 @@ func handleUpdateTask(w http.ResponseWriter, r *http.Request) {
 	}
 	defer tx.Commit()
 
-	task, err := models.FetchOneTask(tx, payload.TaskID)
+	userID, err := context.Get(r, "user").(jwt.MapClaims).GetSubject()
+	user, err := models.FetchOneUserByCloudIamSub(tx, userID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	user, err := models.FetchOneUserByCloudIamSub(tx, r.Context().Value("user").(jwt.Claims).(*jwt.RegisteredClaims).Subject)
+	var payload CreateTaskPayload
+	err = json.NewDecoder(body).Decode(&payload)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	task, err := models.FetchOneTask(tx, uuid)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -394,7 +383,7 @@ func handleUpdateTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	task = models.Task{
-		TaskID:           payload.TaskID,
+		TaskID:           uuid,
 		Quantity:         payload.Quantity,
 		Unit:             unit,
 		Name:             payload.Name,
