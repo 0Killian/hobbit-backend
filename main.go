@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"server/models"
 	"strconv"
 	"strings"
 	"time"
@@ -16,9 +17,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
+	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
-
-	"server/models"
 )
 
 // Configuration struct for Keycloak settings
@@ -37,6 +37,7 @@ var (
 )
 
 func init() {
+	godotenv.Load()
 	config = &Config{
 		ClientID:     os.Getenv("KEYCLOAK_CLIENT_ID"),
 		ClientSecret: os.Getenv("KEYCLOAK_CLIENT_SECRET"),
