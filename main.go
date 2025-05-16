@@ -186,10 +186,10 @@ func authMiddleware(next http.HandlerFunc) http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		_, err = models.FetchOneUserByCloudIamSub(tx, sub)
+		user, err := models.FetchOneUserByCloudIamSub(tx, sub)
 		if err != nil {
 			if err == sql.ErrNoRows {
-				user := models.User{
+				user = models.User{
 					UserID:      uuid.New().String(),
 					CloudIamSub: token.Claims.(jwt.MapClaims)["sub"].(string),
 					Rank:        0,
@@ -208,6 +208,13 @@ func authMiddleware(next http.HandlerFunc) http.HandlerFunc {
 		if err := tx.Commit(); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
+		}
+		if rdb != nil {
+			err = rdb.Set(ctx, "user:"+user.CloudIamSub, user, 0).Err()
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
 		}
 		next.ServeHTTP(w, r)
 	})
