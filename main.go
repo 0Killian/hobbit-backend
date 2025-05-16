@@ -34,6 +34,7 @@ type Config struct {
 	Realm        string
 	DatabaseURL  string
 	RedisURL     string
+	StripPublicKey string
 }
 
 var (
@@ -53,6 +54,7 @@ func init() {
 		Realm:        os.Getenv("KEYCLOAK_REALM"),
 		DatabaseURL:  os.Getenv("DATABASE_URL"),
 		RedisURL:     os.Getenv("REDIS_URL"),
+		StripPublicKey: os.Getenv("STRIPE_PUBLIC_KEY"),
 	}
 
 	publicKeyPath := os.Getenv("KEYCLOAK_PUBLIC_KEY_PATH")
