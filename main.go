@@ -209,11 +209,20 @@ func authMiddleware(next http.HandlerFunc) http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+
 		if rdb != nil {
-			err = rdb.Set(ctx, "user:"+user.CloudIamSub, user, 0).Err()
+			present, err := rdb.Exists(ctx, "user:"+user.CloudIamSub).Result()
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
+			}
+
+			if present == 0 {
+				err = rdb.Set(ctx, "user:"+user.CloudIamSub, user, 0).Err()
+				if err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
 			}
 		}
 		next.ServeHTTP(w, r)
