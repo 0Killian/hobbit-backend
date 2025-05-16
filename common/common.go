@@ -16,12 +16,13 @@ import (
 
 // Configuration struct for Keycloak settings
 type Config_T struct {
-	ClientID     string
-	ClientSecret string
-	KeycloakURL  string
-	Realm        string
-	DatabaseURL  string
-	RedisURL     string
+	ClientID        string
+	ClientSecret    string
+	KeycloakURL     string
+	Realm           string
+	DatabaseURL     string
+	RedisURL        string
+	StripePublicKey string
 }
 
 var (
@@ -35,12 +36,13 @@ var (
 func init() {
 	godotenv.Load()
 	Config = &Config_T{
-		ClientID:     os.Getenv("KEYCLOAK_CLIENT_ID"),
-		ClientSecret: os.Getenv("KEYCLOAK_CLIENT_SECRET"),
-		KeycloakURL:  os.Getenv("KEYCLOAK_URL"),
-		Realm:        os.Getenv("KEYCLOAK_REALM"),
-		DatabaseURL:  os.Getenv("DATABASE_URL"),
-		RedisURL:     os.Getenv("REDIS_URL"),
+		ClientID:        os.Getenv("KEYCLOAK_CLIENT_ID"),
+		ClientSecret:    os.Getenv("KEYCLOAK_CLIENT_SECRET"),
+		KeycloakURL:     os.Getenv("KEYCLOAK_URL"),
+		Realm:           os.Getenv("KEYCLOAK_REALM"),
+		DatabaseURL:     os.Getenv("DATABASE_URL"),
+		RedisURL:        os.Getenv("REDIS_URL"),
+		StripePublicKey: os.Getenv("STRIPE_PUBLIC_KEY"),
 	}
 
 	publicKeyPath := os.Getenv("KEYCLOAK_PUBLIC_KEY_PATH")
@@ -61,6 +63,10 @@ func init() {
 	}*/
 	if publicKeyPath == "" {
 		log.Fatal("KEYCLOAK_PUBLIC_KEY_PATH is not set")
+	}
+
+	if Config.StripePublicKey == "" {
+		log.Fatal("STRIPE_PUBLIC_KEY is not set")
 	}
 
 	if Config.DatabaseURL == "" {
