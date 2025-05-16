@@ -1,6 +1,7 @@
 package main
 
 import (
+	go_context "context"
 	"crypto/rsa"
 	"database/sql"
 	"encoding/json"
@@ -8,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"server/models"
 	"strconv"
 	"strings"
 	"time"
@@ -16,9 +18,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
+	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
-
-	"server/models"
+	"github.com/redis/go-redis/v9"
 )
 
 // Configuration struct for Keycloak settings
@@ -28,21 +30,26 @@ type Config struct {
 	KeycloakURL  string
 	Realm        string
 	DatabaseURL  string
+	RedisURL     string
 }
 
 var (
 	config    *Config
 	publicKey *rsa.PublicKey
 	db        *sql.DB
+	rdb       *redis.Client
+	ctx       = go_context.Background()
 )
 
 func init() {
+	godotenv.Load()
 	config = &Config{
 		ClientID:     os.Getenv("KEYCLOAK_CLIENT_ID"),
 		ClientSecret: os.Getenv("KEYCLOAK_CLIENT_SECRET"),
 		KeycloakURL:  os.Getenv("KEYCLOAK_URL"),
 		Realm:        os.Getenv("KEYCLOAK_REALM"),
 		DatabaseURL:  os.Getenv("DATABASE_URL"),
+		RedisURL:     os.Getenv("REDIS_URL"),
 	}
 
 	publicKeyPath := os.Getenv("KEYCLOAK_PUBLIC_KEY_PATH")
@@ -67,6 +74,34 @@ func init() {
 
 	if config.DatabaseURL == "" {
 		log.Fatal("DATABASE_URL is not set")
+	}
+
+	if config.RedisURL != "" {
+		redisConfig, err := redis.ParseURL(config.RedisURL)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		rdb = redis.NewClient(redisConfig)
+
+		log.Printf("Connected to Redis at %s", config.RedisURL)
+
+		_, err = rdb.Ping(ctx).Result()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		err = rdb.Set(ctx, "test", "test", 0).Err()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		val, err := rdb.Get(ctx, "test").Result()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		log.Printf("Redis test: %s", val)
 	}
 
 	var err error
