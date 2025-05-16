@@ -1,4 +1,5 @@
 bin/
 .env
 .envrc
+.env
 pubkey.pem
