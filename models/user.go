@@ -19,7 +19,7 @@ const (
 
 func FetchOneUser(conn *sql.Tx, userID string) (User, error) {
 	var user User
-	row := conn.QueryRow("select u.user_id, u.cloud_iam_sub, ue.rank from \"user\" u inner join user_experience ue on u.user_id = ue.user_id where user_id = $1", userID)
+	row := conn.QueryRow("select u.user_id, u.cloud_iam_sub, ue.rank from \"user\" u inner join user_experience ue on u.user_id = ue.user_id where u.user_id = $1", userID)
 	err := row.Scan(&user.UserID, &user.CloudIamSub, &user.Rank)
 	return user, err
 }

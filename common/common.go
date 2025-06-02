@@ -12,16 +12,19 @@ import (
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"github.com/redis/go-redis/v9"
+	"github.com/stripe/stripe-go/v82"
 )
 
 // Configuration struct for Keycloak settings
 type Config_T struct {
-	ClientID     string
-	ClientSecret string
-	KeycloakURL  string
-	Realm        string
-	DatabaseURL  string
-	RedisURL     string
+	DatabaseURL         string
+	RedisURL            string
+	StripeSecretKey     string
+	StripeWebhookSecret string
+	StripePrice1KXP     string
+	Hostname            string
+	Port                string
+	PublicBaseUrl       string
 }
 
 var (
@@ -35,36 +38,47 @@ var (
 func init() {
 	godotenv.Load()
 	Config = &Config_T{
-		ClientID:     os.Getenv("KEYCLOAK_CLIENT_ID"),
-		ClientSecret: os.Getenv("KEYCLOAK_CLIENT_SECRET"),
-		KeycloakURL:  os.Getenv("KEYCLOAK_URL"),
-		Realm:        os.Getenv("KEYCLOAK_REALM"),
-		DatabaseURL:  os.Getenv("DATABASE_URL"),
-		RedisURL:     os.Getenv("REDIS_URL"),
+		DatabaseURL:         os.Getenv("DATABASE_URL"),
+		RedisURL:            os.Getenv("REDIS_URL"),
+		StripeSecretKey:     os.Getenv("STRIPE_SECRET_KEY"),
+		StripeWebhookSecret: os.Getenv("STRIPE_WEBHOOK_SECRET"),
+		StripePrice1KXP:     os.Getenv("STRIPE_PRICE_1KXP"),
+		Hostname:            os.Getenv("HOSTNAME"),
+		Port:                os.Getenv("PORT"),
+		PublicBaseUrl:       os.Getenv("PUBLIC_BASE_URL"),
 	}
 
 	publicKeyPath := os.Getenv("KEYCLOAK_PUBLIC_KEY_PATH")
-	/*if config.ClientID == "" {
-		log.Fatal("KEYCLOAK_CLIENT_ID is not set")
-	}
-
-	if config.ClientSecret == "" {
-		log.Fatal("KEYCLOAK_CLIENT_SECRET is not set")
-	}
-
-	if config.KeycloakURL == "" {
-		log.Fatal("KEYCLOAK_URL is not set")
-	}
-
-	if config.Realm == "" {
-		log.Fatal("KEYCLOAK_REALM is not set")
-	}*/
 	if publicKeyPath == "" {
 		log.Fatal("KEYCLOAK_PUBLIC_KEY_PATH is not set")
 	}
 
+	if Config.StripeSecretKey == "" {
+		log.Fatal("STRIPE_SECRET_KEY is not set")
+	}
+
 	if Config.DatabaseURL == "" {
 		log.Fatal("DATABASE_URL is not set")
+	}
+
+	if Config.StripeWebhookSecret == "" {
+		log.Fatal("STRIPE_WEBHOOK_SECRET is not set")
+	}
+
+	if Config.StripePrice1KXP == "" {
+		log.Fatal("STRIPE_PRICE_1KXP is not set")
+	}
+
+	if Config.Hostname == "" {
+		Config.Hostname = "localhost"
+	}
+
+	if Config.Port == "" {
+		Config.Port = "8080"
+	}
+
+	if Config.PublicBaseUrl == "" {
+		Config.PublicBaseUrl = "http://" + Config.Hostname + ":" + Config.Port
 	}
 
 	if Config.RedisURL != "" {
@@ -100,4 +114,6 @@ func init() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	stripe.Key = Config.StripeSecretKey
 }

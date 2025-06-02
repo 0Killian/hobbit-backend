@@ -4,6 +4,8 @@ import (
 	"log"
 	"net/http"
 	"server/controllers/auth"
+	"server/controllers/stripe"
+	stripeCheckoutController "server/controllers/stripe/checkout"
 	"server/controllers/tasks"
 	"server/middlewares"
 
@@ -24,6 +26,9 @@ func main() {
 	r.HandleFunc("/api/v1/tasks", middlewares.Auth(taskController.HandleCreateTask)).Methods("POST", "OPTIONS")
 	r.HandleFunc("/api/v1/tasks/{uuid}", middlewares.Auth(taskController.HandleUpdateTask)).Methods("PUT", "OPTIONS")
 	r.HandleFunc("/api/v1/tasks/{uuid}/complete", middlewares.Auth(taskController.HandleCompleteTask)).Methods("PUT", "OPTIONS")
+
+	r.HandleFunc("/api/v1/stripe/webhook", stripeController.HandleWebhook)
+	r.HandleFunc("/api/v1/stripe/checkout/create", middlewares.Auth(stripeCheckoutController.HandleExperienceCheckout)).Methods("POST", "OPTIONS")
 
 	log.Printf("Server starting on :8080")
 	log.Fatal(http.ListenAndServe(":8080", r))
