@@ -18,7 +18,7 @@ func main() {
 
 	r.HandleFunc("/api/v1/auth/me", middlewares.Auth(authController.HandleGet)).Methods("GET", "OPTIONS")
 
-	r.HandleFunc("/api/v1/tasks", middlewares.Auth(taskController.HandleCompleteTask)).Methods("GET", "OPTIONS")
+	r.HandleFunc("/api/v1/tasks", middlewares.Auth(taskController.HandleGetTasks)).Methods("GET", "OPTIONS")
 	r.HandleFunc("/api/v1/tasks/{uuid}", middlewares.Auth(taskController.HandleGetTask)).Methods("GET", "OPTIONS")
 
 	r.HandleFunc("/api/v1/tasks", middlewares.Auth(taskController.HandleCreateTask)).Methods("POST", "OPTIONS")
