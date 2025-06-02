@@ -299,7 +299,7 @@ func UpdateTask(conn *sql.Tx, task Task) error {
 }
 
 func CompleteTask(conn *sql.Tx, userID string, taskID string, completionTime time.Time) error {
-	row := conn.QueryRow("select user_task_id, experience_gained from user_task inner join task on task.task_id = user_task.task_id where task_id = $1 and user_id = $2", taskID, userID)
+	row := conn.QueryRow("select user_task_id, experience_gained from user_task inner join task on task.task_id = user_task.task_id where user_task.task_id = $1 and user_task.user_id = $2", taskID, userID)
 
 	var userTaskID string
 	var experienceGained int
