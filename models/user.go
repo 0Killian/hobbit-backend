@@ -2,6 +2,7 @@ package models
 
 import (
 	"database/sql"
+	"encoding/json"
 )
 
 type User struct {
@@ -81,4 +82,8 @@ func Update(conn *sql.Tx, user User) error {
 
 	_, err = conn.Exec("update user_experience set rank = $1 where user_id = $2", user.Rank, user.UserID)
 	return err
+}
+
+func (i User) MarshalBinary() ([]byte, error) {
+	return json.Marshal(i)
 }
