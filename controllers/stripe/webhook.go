@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"server/common"
+	"server/models"
 
 	"github.com/stripe/stripe-go/v82"
 	"github.com/stripe/stripe-go/v82/webhook"
@@ -40,28 +41,40 @@ func HandleWebhook(w http.ResponseWriter, req *http.Request) {
 	// Unmarshal the event data into an appropriate struct depending on its Type
 	switch event.Type {
 	case "checkout.session.completed":
+		tx, err := common.Db.Begin()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error starting transaction: %v\n", err)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
 		var paymentIntent stripe.PaymentIntent
-		err := json.Unmarshal(event.Data.Raw, &paymentIntent)
+		err = json.Unmarshal(event.Data.Raw, &paymentIntent)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error parsing webhook JSON: %v\n", err)
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		log.Printf("Successful payment for %d.", paymentIntent.Amount)
-		// Then define and call a func to handle the successful payment intent.
-		// handlePaymentIntentSucceeded(paymentIntent)
-	case "payment_method.attached":
-		var paymentMethod stripe.PaymentMethod
-		err := json.Unmarshal(event.Data.Raw, &paymentMethod)
+		log.Printf("user %s purchased 1000 experience points", paymentIntent.Metadata["userId"])
+		user, err := models.FetchOneUserByCloudIamSub(tx, paymentIntent.Metadata["userId"])
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error parsing webhook JSON: %v\n", err)
+			fmt.Fprintf(os.Stderr, "Error fetching user: %v\n", err)
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		// Then define and call a func to handle the successful attachment of a PaymentMethod.
-		// handlePaymentMethodAttached(paymentMethod)
-	default:
-		fmt.Fprintf(os.Stderr, "Unhandled event type: %s\n", event.Type)
+		user.Rank += 1.0
+		err = models.Update(tx, user)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error updating user: %v\n", err)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		err = tx.Commit()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error committing transaction: %v\n", err)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
 	}
 
 	w.WriteHeader(http.StatusOK)
