@@ -16,12 +16,10 @@ import (
 
 // Configuration struct for Keycloak settings
 type Config_T struct {
-	ClientID     string
-	ClientSecret string
-	KeycloakURL  string
-	Realm        string
-	DatabaseURL  string
-	RedisURL     string
+	DatabaseURL         string
+	RedisURL            string
+	StripePublicKey     string
+	StripeWebhookSecret string
 }
 
 var (
@@ -35,36 +33,27 @@ var (
 func init() {
 	godotenv.Load()
 	Config = &Config_T{
-		ClientID:     os.Getenv("KEYCLOAK_CLIENT_ID"),
-		ClientSecret: os.Getenv("KEYCLOAK_CLIENT_SECRET"),
-		KeycloakURL:  os.Getenv("KEYCLOAK_URL"),
-		Realm:        os.Getenv("KEYCLOAK_REALM"),
-		DatabaseURL:  os.Getenv("DATABASE_URL"),
-		RedisURL:     os.Getenv("REDIS_URL"),
+		DatabaseURL:         os.Getenv("DATABASE_URL"),
+		RedisURL:            os.Getenv("REDIS_URL"),
+		StripePublicKey:     os.Getenv("STRIPE_PUBLIC_KEY"),
+		StripeWebhookSecret: os.Getenv("STRIPE_WEBHOOK_SECRET"),
 	}
 
 	publicKeyPath := os.Getenv("KEYCLOAK_PUBLIC_KEY_PATH")
-	/*if config.ClientID == "" {
-		log.Fatal("KEYCLOAK_CLIENT_ID is not set")
-	}
-
-	if config.ClientSecret == "" {
-		log.Fatal("KEYCLOAK_CLIENT_SECRET is not set")
-	}
-
-	if config.KeycloakURL == "" {
-		log.Fatal("KEYCLOAK_URL is not set")
-	}
-
-	if config.Realm == "" {
-		log.Fatal("KEYCLOAK_REALM is not set")
-	}*/
 	if publicKeyPath == "" {
 		log.Fatal("KEYCLOAK_PUBLIC_KEY_PATH is not set")
 	}
 
+	if Config.StripePublicKey == "" {
+		log.Fatal("STRIPE_PUBLIC_KEY is not set")
+	}
+
 	if Config.DatabaseURL == "" {
 		log.Fatal("DATABASE_URL is not set")
+	}
+
+	if Config.StripeWebhookSecret == "" {
+		log.Fatal("STRIPE_WEBHOOK_SECRET is not set")
 	}
 
 	if Config.RedisURL != "" {
