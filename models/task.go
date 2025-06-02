@@ -136,6 +136,7 @@ func CountTasks(conn *sql.Tx) (int, error) {
 
 func FetchAllTasks(conn *sql.Tx, filter TaskFilter, sortBy *TaskSortBy, limit int, offset int) ([]Task, int, error) {
 	var tasks []Task
+	tasks = make([]Task, 0)
 
 	query := "select task.task_id, quantity, unit, name, description, frequency, experience_gained, is_public, user_id from task"
 	joins := " left join user_task on task.task_id = user_task.task_id"
