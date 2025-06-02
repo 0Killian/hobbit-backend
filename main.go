@@ -16,7 +16,7 @@ func main() {
 
 	r.Use(middlewares.Cors)
 
-	r.HandleFunc("/api/v1/me", middlewares.Auth(authController.HandleGet)).Methods("GET", "OPTIONS")
+	r.HandleFunc("/api/v1/auth/me", middlewares.Auth(authController.HandleGet)).Methods("GET", "OPTIONS")
 
 	r.HandleFunc("/api/v1/tasks", middlewares.Auth(taskController.HandleCompleteTask)).Methods("GET", "OPTIONS")
 	r.HandleFunc("/api/v1/tasks/{uuid}", middlewares.Auth(taskController.HandleGetTask)).Methods("GET", "OPTIONS")
